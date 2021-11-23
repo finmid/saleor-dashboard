@@ -1,7 +1,7 @@
 FROM node:10 as builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 ARG APP_MOUNT_URI
 ARG API_URI
