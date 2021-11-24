@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-const CheckerPlugin = require("fork-ts-checker-webpack-plugin");
 const webpack = require("webpack");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -13,10 +12,6 @@ const pathsPlugin = new TsconfigPathsPlugin({
   configFile: "./tsconfig.json"
 });
 
-const checkerPlugin = new CheckerPlugin({
-  eslint: true,
-  reportFiles: ["src/**/*.{ts,tsx}"]
-});
 const htmlWebpackPlugin = new HtmlWebpackPlugin({
   filename: "index.html",
   hash: true,
@@ -100,7 +95,7 @@ module.exports = (env, argv) => {
       splitChunks: false
     },
     output,
-    plugins: [checkerPlugin, environmentPlugin, htmlWebpackPlugin],
+    plugins: [environmentPlugin, htmlWebpackPlugin],
     resolve: {
       extensions: [".js", ".jsx", ".ts", ".tsx"],
       plugins: [pathsPlugin]

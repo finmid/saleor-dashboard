@@ -37,7 +37,7 @@ const FileUpload: React.FC<FileUploadProps> = props => {
         disabled={disabled}
         name={name}
         onChange={onChange}
-        ref={ref => (this.upload = ref)}
+        ref={ref => ((this as any).upload = ref)}
         className={classes.fileUploadField}
         type="file"
         value={value}
@@ -48,7 +48,7 @@ const FileUpload: React.FC<FileUploadProps> = props => {
         onChange={undefined}
         value={value}
       />
-      <Button disabled={disabled} onClick={() => this.upload.click()}>
+      <Button disabled={disabled} onClick={() => (this as any).upload.click()}>
         <FormattedMessage
           defaultMessage="Upload"
           description="upload file, button"
