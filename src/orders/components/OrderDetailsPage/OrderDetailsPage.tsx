@@ -8,7 +8,7 @@ import { Container } from "@saleor/components/Container";
 import { DateTime } from "@saleor/components/Date";
 import Form from "@saleor/components/Form";
 import Grid from "@saleor/components/Grid";
-import Metadata, { MetadataFormData } from "@saleor/components/Metadata";
+import { MetadataFormData } from "@saleor/components/Metadata";
 import PageHeader from "@saleor/components/PageHeader";
 import SaveButtonBar from "@saleor/components/SaveButtonBar";
 import Skeleton from "@saleor/components/Skeleton";
@@ -24,7 +24,6 @@ import { maybe, renderCollection } from "../../../misc";
 import { OrderStatus } from "../../../types/globalTypes";
 import { OrderDetails_order } from "../../types/OrderDetails";
 import OrderCustomer from "../OrderCustomer";
-import OrderCustomerNote from "../OrderCustomerNote";
 import OrderFulfillment from "../OrderFulfillment";
 import OrderHistory, { FormData as HistoryFormData } from "../OrderHistory";
 import OrderInvoiceList from "../OrderInvoiceList";
@@ -107,8 +106,7 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = props => {
   const intl = useIntl();
   const {
     isMetadataModified,
-    isPrivateMetadataModified,
-    makeChangeHandler: makeMetadataChangeHandler
+    isPrivateMetadataModified
   } = useMetadataChangeTrigger();
 
   const canCancel = maybe(() => order.status) !== OrderStatus.CANCELED;
@@ -137,118 +135,110 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = props => {
 
   return (
     <Form initial={initial} onSubmit={handleSubmit}>
-      {({ change, data, hasChanged, submit }) => {
-        const changeMetadata = makeMetadataChangeHandler(change);
-
-        return (
-          <Container>
-            <AppHeader onBack={onBack}>
-              {intl.formatMessage(sectionNames.orders)}
-            </AppHeader>
-            <PageHeader
-              className={classes.header}
-              inline
-              title={maybe(() => order.number) ? "#" + order.number : undefined}
-            >
-              {canCancel && (
-                <CardMenu
-                  menuItems={[
-                    {
-                      label: intl.formatMessage({
-                        defaultMessage: "Cancel order",
-                        description: "button"
-                      }),
-                      onSelect: onOrderCancel
-                    }
-                  ]}
+      {({ hasChanged, submit }) => (
+        <Container>
+          <AppHeader onBack={onBack}>
+            {intl.formatMessage(sectionNames.orders)}
+          </AppHeader>
+          <PageHeader
+            className={classes.header}
+            inline
+            title={maybe(() => order.number) ? "#" + order.number : undefined}
+          >
+            {canCancel && (
+              <CardMenu
+                menuItems={[
+                  {
+                    label: intl.formatMessage({
+                      defaultMessage: "Cancel order",
+                      description: "button"
+                    }),
+                    onSelect: onOrderCancel
+                  }
+                ]}
+              />
+            )}
+          </PageHeader>
+          <div className={classes.date}>
+            {order && order.created ? (
+              <Typography variant="caption">
+                <DateTime date={order.created} />
+              </Typography>
+            ) : (
+              <Skeleton style={{ width: "10em" }} />
+            )}
+          </div>
+          <Grid>
+            <div>
+              {unfulfilled.length > 0 && (
+                <OrderUnfulfilledItems
+                  canFulfill={canFulfill}
+                  lines={unfulfilled}
+                  onFulfill={onOrderFulfill}
                 />
               )}
-            </PageHeader>
-            <div className={classes.date}>
-              {order && order.created ? (
-                <Typography variant="caption">
-                  <DateTime date={order.created} />
-                </Typography>
-              ) : (
-                <Skeleton style={{ width: "10em" }} />
+              {renderCollection(
+                maybe(() => order.fulfillments),
+                (fulfillment, fulfillmentIndex) => (
+                  <React.Fragment key={maybe(() => fulfillment.id, "loading")}>
+                    {!(unfulfilled.length === 0 && fulfillmentIndex === 0) && (
+                      <CardSpacer />
+                    )}
+                    <OrderFulfillment
+                      fulfillment={fulfillment}
+                      orderNumber={maybe(() => order.number)}
+                      onOrderFulfillmentCancel={() =>
+                        onFulfillmentCancel(fulfillment.id)
+                      }
+                      onTrackingCodeAdd={() =>
+                        onFulfillmentTrackingNumberUpdate(fulfillment.id)
+                      }
+                    />
+                  </React.Fragment>
+                )
               )}
+              <CardSpacer />
+              <OrderPayment
+                order={order}
+                onCapture={onPaymentCapture}
+                onMarkAsPaid={onPaymentPaid}
+                onRefund={onPaymentRefund}
+                onVoid={onPaymentVoid}
+              />
+              <CardSpacer />
+              {/* <Metadata data={data} onChange={changeMetadata} /> */}
+              <OrderHistory
+                history={maybe(() => order.events)}
+                onNoteAdd={onNoteAdd}
+              />
             </div>
-            <Grid>
-              <div>
-                {unfulfilled.length > 0 && (
-                  <OrderUnfulfilledItems
-                    canFulfill={canFulfill}
-                    lines={unfulfilled}
-                    onFulfill={onOrderFulfill}
-                  />
-                )}
-                {renderCollection(
-                  maybe(() => order.fulfillments),
-                  (fulfillment, fulfillmentIndex) => (
-                    <React.Fragment
-                      key={maybe(() => fulfillment.id, "loading")}
-                    >
-                      {!(
-                        unfulfilled.length === 0 && fulfillmentIndex === 0
-                      ) && <CardSpacer />}
-                      <OrderFulfillment
-                        fulfillment={fulfillment}
-                        orderNumber={maybe(() => order.number)}
-                        onOrderFulfillmentCancel={() =>
-                          onFulfillmentCancel(fulfillment.id)
-                        }
-                        onTrackingCodeAdd={() =>
-                          onFulfillmentTrackingNumberUpdate(fulfillment.id)
-                        }
-                      />
-                    </React.Fragment>
-                  )
-                )}
-                <CardSpacer />
-                <OrderPayment
-                  order={order}
-                  onCapture={onPaymentCapture}
-                  onMarkAsPaid={onPaymentPaid}
-                  onRefund={onPaymentRefund}
-                  onVoid={onPaymentVoid}
-                />
-                <CardSpacer />
-                <Metadata data={data} onChange={changeMetadata} />
-                <OrderHistory
-                  history={maybe(() => order.events)}
-                  onNoteAdd={onNoteAdd}
-                />
-              </div>
-              <div>
-                <OrderCustomer
-                  canEditAddresses={canEditAddresses}
-                  canEditCustomer={false}
-                  order={order}
-                  userPermissions={userPermissions}
-                  onBillingAddressEdit={onBillingAddressEdit}
-                  onShippingAddressEdit={onShippingAddressEdit}
-                  onProfileView={onProfileView}
-                />
-                <CardSpacer />
-                <OrderInvoiceList
-                  invoices={order?.invoices}
-                  onInvoiceClick={onInvoiceClick}
-                  onInvoiceGenerate={onInvoiceGenerate}
-                  onInvoiceSend={onInvoiceSend}
-                />
-                <CardSpacer />
-                <OrderCustomerNote note={maybe(() => order.customerNote)} />
-              </div>
-            </Grid>
-            <SaveButtonBar
-              onCancel={onBack}
-              onSave={submit}
-              state={saveButtonBarState}
-              disabled={disabled || !hasChanged}
-            />
-          </Container>
-        );
-      }}
+            <div>
+              <OrderInvoiceList
+                invoices={order?.invoices}
+                onInvoiceClick={onInvoiceClick}
+                onInvoiceGenerate={onInvoiceGenerate}
+                onInvoiceSend={onInvoiceSend}
+              />
+              <CardSpacer />
+              <OrderCustomer
+                canEditAddresses={canEditAddresses}
+                canEditCustomer={false}
+                order={order}
+                userPermissions={userPermissions}
+                onBillingAddressEdit={onBillingAddressEdit}
+                onShippingAddressEdit={onShippingAddressEdit}
+                onProfileView={onProfileView}
+              />
+            </div>
+          </Grid>
+          <SaveButtonBar
+            onCancel={onBack}
+            onSave={submit}
+            state={saveButtonBarState}
+            disabled={disabled || !hasChanged}
+          />
+        </Container>
+      )}
     </Form>
   );
 };
